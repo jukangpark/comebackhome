@@ -5,9 +5,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { ApiError } from "@/lib/api";
-import { petApi, type Species } from "@/lib/pet";
+import { petApi, modelApi, type Species } from "@/lib/pet";
+import { GenerateStep } from "@/components/GenerateStep";
 
-type Step = "loading" | "info" | "image";
+type Step = "loading" | "info" | "image" | "generate";
 
 export default function Onboarding() {
   const navigate = useNavigate();
@@ -23,16 +24,27 @@ export default function Onboarding() {
 
   // 현재 진행 상태에 맞는 스텝으로 진입
   useEffect(() => {
-    petApi
-      .get()
-      .then((pet) => {
-        if (pet.hasImage) navigate("/", { replace: true });
-        else setStep("image"); // 펫은 있는데 이미지 없음 → 이어서
-      })
-      .catch((err) => {
+    (async () => {
+      try {
+        const pet = await petApi.get();
+        if (!pet.hasImage) {
+          setStep("image");
+          return;
+        }
+        // 이미지까지 있음 → 모델 상태로 분기
+        try {
+          const m = await modelApi.status();
+          if (m.status === "DONE") navigate("/", { replace: true });
+          else setStep("generate"); // IN_PROGRESS or FAILED → 이어서/재시도
+        } catch (err) {
+          if (err instanceof ApiError && err.status === 404) setStep("generate");
+          else setError("불러오는 중 문제가 발생했어요");
+        }
+      } catch (err) {
         if (err instanceof ApiError && err.status === 404) setStep("info");
         else setError("불러오는 중 문제가 발생했어요");
-      });
+      }
+    })();
   }, [navigate]);
 
   const submitInfo = async () => {
@@ -62,7 +74,7 @@ export default function Onboarding() {
     setBusy(true);
     try {
       await petApi.uploadImage(file);
-      navigate("/", { replace: true }); // 다음 단계(3D/페르소나)는 이후 Phase
+      setStep("generate"); // 3D 생성 단계로
     } catch (err) {
       setError(err instanceof Error ? err.message : "업로드에 실패했어요");
     } finally {
@@ -80,16 +92,22 @@ export default function Onboarding() {
 
   return (
     <div className="mx-auto flex min-h-dvh max-w-[480px] flex-col justify-center gap-6 px-6 py-10">
-      <div className="text-center">
-        <h1 className="text-2xl font-bold">
-          {step === "info" ? "우리 아이를 소개해주세요" : "사진 한 장 올려주세요"}
-        </h1>
-        <p className="text-muted-foreground mt-1 text-sm">
-          {step === "info"
-            ? "이름과 종류를 알려주세요"
-            : "얼굴이 잘 보이는 정면 사진이 좋아요"}
-        </p>
-      </div>
+      {step !== "generate" && (
+        <div className="text-center">
+          <h1 className="text-2xl font-bold">
+            {step === "info" ? "우리 아이를 소개해주세요" : "사진 한 장 올려주세요"}
+          </h1>
+          <p className="text-muted-foreground mt-1 text-sm">
+            {step === "info"
+              ? "이름과 종류를 알려주세요"
+              : "얼굴이 잘 보이는 정면 사진이 좋아요"}
+          </p>
+        </div>
+      )}
+
+      {step === "generate" && (
+        <GenerateStep onDone={() => navigate("/", { replace: true })} />
+      )}
 
       {step === "info" && (
         <div className="flex flex-col gap-5">

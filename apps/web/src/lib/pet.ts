@@ -32,3 +32,19 @@ export const petApi = {
 
 // 업로드된 이미지 URL (캐시 무효화용 쿼리 붙여 사용)
 export const petImageUrl = () => `/api/pet/image`;
+
+// ── 3D 모델 ──
+export type ModelStatus = "IN_PROGRESS" | "DONE" | "FAILED";
+
+export interface ModelState {
+  status: ModelStatus;
+  progress: number;
+  hasGlb: boolean;
+}
+
+export const modelApi = {
+  start: () => api.post<ModelState>("/pet/model"),
+  status: () => api.get<ModelState>("/pet/model"),
+};
+
+export const petGlbUrl = () => `/api/pet/model/file`;

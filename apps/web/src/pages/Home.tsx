@@ -3,7 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/auth/AuthContext";
 import { ApiError } from "@/lib/api";
-import { petApi, petImageUrl, type Pet } from "@/lib/pet";
+import { petApi, modelApi, petGlbUrl, type Pet } from "@/lib/pet";
+import { PetViewer } from "@/components/PetViewer";
 
 export default function Home() {
   const { user, logout } = useAuth();
@@ -12,24 +13,34 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    petApi
-      .get()
-      .then((p) => {
-        // 이미지 없으면 아직 온보딩 미완료 → 이어서
+    (async () => {
+      try {
+        const p = await petApi.get();
         if (!p.hasImage) {
           navigate("/onboarding", { replace: true });
           return;
         }
+        // 3D 모델이 완료되지 않았으면 온보딩(생성 단계)로
+        try {
+          const m = await modelApi.status();
+          if (m.status !== "DONE") {
+            navigate("/onboarding", { replace: true });
+            return;
+          }
+        } catch {
+          navigate("/onboarding", { replace: true });
+          return;
+        }
         setPet(p);
-      })
-      .catch((err) => {
+      } catch (err) {
         if (err instanceof ApiError && err.status === 404) {
           navigate("/onboarding", { replace: true });
-        } else {
-          setLoading(false);
+          return;
         }
-      })
-      .finally(() => setLoading(false));
+      } finally {
+        setLoading(false);
+      }
+    })();
   }, [navigate]);
 
   if (loading) {
@@ -57,20 +68,15 @@ export default function Home() {
         </Button>
       </div>
 
-      <div className="flex flex-col items-center gap-4">
-        <img
-          src={petImageUrl()}
-          alt={pet.name}
-          className="aspect-square w-full max-w-[320px] rounded-2xl object-cover"
-        />
-        <div className="text-center">
-          <h1 className="text-2xl font-bold">
-            {pet.species === "dog" ? "🐶" : "🐱"} {pet.name}
-          </h1>
-          <p className="text-muted-foreground mt-1 text-sm">
-            다음 단계에서 3D 모델을 만들 거예요
-          </p>
-        </div>
+      <PetViewer url={petGlbUrl()} />
+
+      <div className="text-center">
+        <h1 className="text-2xl font-bold">
+          {pet.species === "dog" ? "🐶" : "🐱"} {pet.name}
+        </h1>
+        <p className="text-muted-foreground mt-1 text-sm">
+          다음 단계에서 페르소나를 작성하고 대화를 시작해요
+        </p>
       </div>
     </div>
   );
