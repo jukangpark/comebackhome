@@ -27,14 +27,14 @@
 
 **목표:** `docker compose up` 하면 web/api/db 3개 컨테이너가 뜨고 헬스체크 통과.
 
-**확정:** 패키지 매니저 **pnpm** (pnpm workspace) · 포트 **web:5173 / api:4000** · UI **shadcn/ui + Tailwind**
+**확정:** 패키지 매니저 **pnpm** (pnpm workspace) · 빌드 툴 **Vite** · 포트 **web:5173 / api:4000** · UI **shadcn/ui + Tailwind**
 
 ### 작업
 - [ ] `git init` + `.gitignore`(node_modules, .env, dist, media 등)
 - [ ] pnpm workspace 모노레포 구조 (`pnpm-workspace.yaml`, `apps/web`, `apps/api`, `packages/shared`)
 - [ ] `apps/api`: Express + TS 최소 서버 + `GET /api/health` → `{ok:true}` (포트 4000)
-- [ ] `apps/web`: React + TS + Rspack 최소 앱 (Hello 화면) + dev 서버(포트 5173)
-- [ ] `apps/web`: **Tailwind CSS 설정** + **shadcn/ui 수동 설정**(Rspack 미감지 → `components.json` + `@/` 별칭 tsconfig/rspack resolve)
+- [ ] `apps/web`: **React + TS + Vite** 최소 앱 (Hello 화면) + dev 서버(포트 5173)
+- [ ] `apps/web`: **Tailwind + shadcn/ui `init`**(Vite 자동 감지 → components.json·별칭 자동 세팅)
 - [ ] shadcn 기본 컴포넌트 1개 설치 검증(예: `button`) → 렌더 확인
 - [ ] `apps/api/Dockerfile` (Node 베이스, 추후 Claude CLI 추가 예정 주석)
 - [ ] `apps/web` 빌드 → nginx 정적 서빙 Dockerfile
@@ -45,8 +45,8 @@
 ### 커밋 지점
 1. `chore: init pnpm monorepo structure and gitignore`
 2. `feat(api): express + ts skeleton with health endpoint`
-3. `feat(web): react + ts + rspack skeleton`
-4. `feat(web): tailwind + shadcn/ui manual setup for rspack`
+3. `feat(web): react + ts + vite skeleton`
+4. `feat(web): tailwind + shadcn/ui setup`
 5. `chore(docker): compose with web, api, postgres`
 
 ### 완료 기준

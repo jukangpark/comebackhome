@@ -14,7 +14,7 @@
 | 인증 | **아이디 + 비밀번호**만 (소셜 로그인 없음) |
 | 배포 | **Docker Compose** → 로컬 Mac에서 먼저 기동·테스트 → 홈서버(`jukang@100.64.183.104`) 배포 |
 | Meshy 연동 방식 | **base64 이미지 전송 + 폴링** (로컬/프로덕션 모두 동작, public URL·webhook 불필요) |
-| 스택 | React + TS + Rspack (web) / Express + TS (api) / PostgreSQL (db) |
+| 스택 | React + TS + **Vite** (web) / Express + TS (api) / PostgreSQL (db) |
 | **펫 수** | **유저당 1마리 고정** (1:1) |
 | **이미지 업로드** | **1장만** (대표 이미지) |
 | **UI** | **모바일 퍼스트 반응형** — 스마트폰 레이아웃 기준으로 먼저 제작 |
@@ -47,7 +47,7 @@
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│  브라우저 (React + TS + Rspack)                                    │
+│  브라우저 (React + TS + Vite)                                      │
 │  - 회원가입/로그인 · 펫 등록 · 이미지 업로드                        │
 │  - 3D 뷰어(R3F) · 페르소나 폼 · 채팅 UI                             │
 └───────────────┬─────────────────────────────────────────────────┘
@@ -260,7 +260,7 @@ CREATE INDEX idx_chat_pet_time ON chat_messages(pet_id, created_at);
 
 ---
 
-## 7. 프론트엔드 구조 (React + TS + Rspack)
+## 7. 프론트엔드 구조 (React + TS + Vite)
 
 ### 📱 UI 원칙: 모바일 퍼스트 반응형
 - **모든 화면을 스마트폰 세로 레이아웃(약 375~430px 폭) 기준으로 먼저 제작.**
@@ -291,7 +291,7 @@ CREATE INDEX idx_chat_pet_time ON chat_messages(pet_id, created_at);
 
 ### UI 라이브러리: shadcn/ui + Tailwind (확정)
 - **shadcn/ui** 사용. 컴포넌트를 레포로 복사해오는 방식(종속성 아님) + **Tailwind CSS** 필수.
-- ⚠️ **Rspack은 shadcn CLI가 자동 감지 못 함** → `components.json` + 경로 별칭(`@/components` 등)을 **수동 설정**. (P0에서 처리)
+- **Vite는 shadcn CLI 1급 지원**(자동 감지) → `init`이 `components.json`·별칭·Tailwind를 대부분 자동 세팅.
 - **채팅 UI는 2026-06 chat 컴포넌트 사용** (사용자 지정):
   | 컴포넌트 | 역할 |
   |---|---|
@@ -375,8 +375,9 @@ combackhome/
 ├─ ssh.env                   # 기존
 ├─ docs/                     # 설계·R&D 문서
 ├─ apps/
-│  ├─ web/                   # React + TS + Rspack
-│  │  ├─ rspack.config.ts
+│  ├─ web/                   # React + TS + Vite
+│  │  ├─ vite.config.ts
+│  │  ├─ components.json      # shadcn 설정
 │  │  └─ src/{pages,components,api,three}/
 │  └─ api/                   # Express + TS
 │     ├─ Dockerfile          # Node + Claude CLI

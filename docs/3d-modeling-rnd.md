@@ -1,7 +1,7 @@
 # 이미지 → 3D 모델링 파이프라인 R&D / 방향성 결정
 
 > 반려동물(강아지/고양이) 사진 → 3D 모델 → 페르소나 기반 AI 채팅 웹앱
-> 기술 스택: React + TS + Rspack + Express + PostgreSQL
+> 기술 스택: React + TS + Vite + Express + PostgreSQL
 > 작성일: 2026-07-03
 
 ---
