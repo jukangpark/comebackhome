@@ -60,7 +60,7 @@
 │  ├─ Models : Meshy 생성 요청/상태 조회                             │
 │  ├─ Persona: 페르소나 저장/조회                                    │
 │  ├─ Chat   : 메시지 저장 + claude -p 호출로 답변 생성              │
-│  └─ Worker : 3D 생성 잡 폴링 (pg-boss)                            │
+│  └─ Poller : 3D 생성 상태 폴링 (DB 기반 인터벌 폴러)              │
 └───┬───────────────┬───────────────────┬────────────────┬─────────┘
     │               │                   │                │
     ▼               ▼                   ▼                ▼
@@ -95,10 +95,9 @@
                               │      ai_model:"meshy-6", target_formats:["glb"] }
                               │◀── { result: taskId }
                               │  pet_models INSERT (status=IN_PROGRESS, taskId)
-                              │  pg-boss 잡 등록
 [프론트] 상태 폴링(2~3초) ◀──┤
                               ▼
-                        [Worker] 5~10초마다 GET meshy/:taskId
+                        [Poller] 6초마다 IN_PROGRESS 행 재조회 → GET meshy/:taskId
                               │  status=SUCCEEDED?
                               │    → model_urls.glb 다운로드 → 볼륨 저장
                               │    → pet_models UPDATE (status=DONE, glb_path)
@@ -353,21 +352,7 @@ volumes:
 
 ---
 
-## 10. 구현 단계 (제안)
-
-- **P0 — 뼈대**: 모노레포 + Docker Compose(web/api/db) 기동, 헬스체크. (`docker compose up`으로 3개 뜨는 것 확인)
-- **P1 — 인증**: 회원가입/로그인/세션, 보호 라우트.
-- **P2 — 펫 & 업로드**: 펫 생성, 이미지 업로드(리사이즈), 볼륨 저장.
-- **P3 — 3D 생성**: Meshy 연동(base64+폴링) + pg-boss 워커 + 진행률 UI + R3F 뷰어.
-- **P4 — 페르소나**: 폼 + 저장.
-- **P5 — 채팅**: claude -p 연동(Docker 인증 포함) + 채팅 UI + 이력.
-- **P6 — 마감**: 소유권/에러 처리, 로컬 E2E 점검 → 홈서버 배포.
-
-> 각 P마다 "로컬 Docker에서 동작 확인"을 완료 기준으로.
-
----
-
-## 11. 제안 디렉터리 구조
+## 10. 제안 디렉터리 구조
 ```
 combackhome/
 ├─ docker-compose.yml

@@ -144,31 +144,21 @@ Docker 볼륨 `media`에 `uploads/`(원본 리사이즈 jpeg) + `models/`(glb). 
 | 파일 | 내용 |
 |---|---|
 | `mvp-design.md` | 전체 설계(아키텍처·DB·API·배포). **가장 중요** |
-| `build-phases.md` | 구현 Phase 진행표(P0~P6)·커밋 계획·결정사항 |
+| `deploy-homeserver.md` | 홈서버 배포 절차·nginx·트러블슈팅 (⚠️ gitignore, 로컬 전용) |
 | `meshy-image-to-3d-api.md` | Meshy API 레퍼런스 |
 | `3d-modeling-rnd.md` | 3D 방향성 R&D (Meshy 확정 근거) |
 | `3d-basics-study.md` | 3D 기초 개념 학습노트 |
 
 ---
 
-## 9. 진행 상황 (Phase)
+## 9. 현재 상태
 
-| Phase | 내용 | 상태 |
-|---|---|---|
-| P0 | 모노레포 + Docker Compose 뼈대 | ✅ |
-| P1 | 인증(회원가입/로그인) | ✅ |
-| P2 | 펫 등록 + 이미지 업로드 | ✅ |
-| P3 | 3D 생성(Meshy) + R3F 뷰어 | ✅ |
-| P4 | 페르소나 | ✅ |
-| P5 | 채팅(claude 헤드리스) | ✅ (토큰 주입 후 컨테이너 실답변 검증 완료) |
-| **P6** | **마감 & 홈서버 배포** | ⬜ **다음 작업** |
-
-**현재**: 로컬 맥 Docker에서 **가입→3D→페르소나→실제 대화** 전 구간 동작 확인됨.
-**다음(P6)**: 에러/소유권 재점검 → 프로덕션 compose/env 정리 → 홈서버 배포 → nginx 리버스 프록시 → 스모크 테스트.
+- **기능 완성**: 로컬 맥 Docker에서 **가입 → 펫 등록 → 3D 생성 → 페르소나 → 실제 대화** 전 구간 동작 확인됨(채팅은 토큰 주입 후 컨테이너 실답변 검증 완료).
+- **남은 작업**: 홈서버 배포(프로덕션 compose/env 정리 → 배포 → nginx 리버스 프록시 → 스모크 테스트). 재배포 스크립트 `deploy/homeserver/deploy.sh`, 상세 절차는 로컬 전용 `docs/deploy-homeserver.md`.
 
 ---
 
-## 10. 배포 (홈서버) — P6 참고
+## 10. 배포 (홈서버)
 
 - 타깃: `jukang@100.64.183.104` (Tailscale). Docker 29 / Compose v5 설치됨. claude 네이티브 + **Max 구독(5x)** 로그인됨.
 - 방식: git/rsync로 코드 전송 → `.env`(MESHY_KEY, CLAUDE_CODE_OAUTH_TOKEN, JWT_SECRET 등) 세팅 → `docker compose up -d --build`.
@@ -178,8 +168,8 @@ Docker 볼륨 `media`에 `uploads/`(원본 리사이즈 jpeg) + `models/`(glb). 
 
 ## 11. 작업 규칙 / 함정
 
-- **커밋**: phase별로 잘게, conventional commits(`feat(api):`, `feat(web):`, `docs:`). 커밋 끝에 `Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>`. 커밋 전 typecheck 통과 확인. 깨진 상태 커밋 금지.
-- **커밋 시점**: 사용자가 요청할 때. 각 phase 완료 시 api/web/docs로 나눠 커밋해왔음.
+- **커밋**: 관심사별로 잘게, conventional commits(`feat(api):`, `feat(web):`, `docs:`). 커밋 끝에 `Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>`. 커밋 전 typecheck 통과 확인. 깨진 상태 커밋 금지.
+- **커밋 시점**: 사용자가 요청할 때. 보통 api/web/docs로 나눠 커밋.
 - **pnpm 9.15.9 고정 이유**: 컨테이너 corepack이 최신 pnpm을 받으면 `minimumReleaseAge` 공급망 정책에 걸려 빌드 실패 → `package.json`의 `packageManager`로 고정.
 - **색상 변경**: `apps/web/src/styles/theme.css`만 수정(shadcn 토큰 CSS 변수). 컴포넌트 안 건드림.
 - **shadcn 컴포넌트 추가**: `pnpm dlx shadcn@latest add <name>` (Vite 자동 감지). 기존 button 덮어쓰기 프롬프트엔 `n`.

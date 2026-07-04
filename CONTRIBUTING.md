@@ -5,7 +5,7 @@
 **이 리포의 실제 작업 관례**를 한곳에 모은 것입니다.
 
 > 프로젝트 전체 구조·아키텍처·환경변수·함정은 루트 [CLAUDE.md](CLAUDE.md)에, 설계 상세는
-> [docs/mvp-design.md](docs/mvp-design.md), 배포는 [docs/deploy-homeserver.md](docs/deploy-homeserver.md)를
+> [docs/mvp-design.md](docs/mvp-design.md), 배포는 [deploy/homeserver/deploy.sh](deploy/homeserver/deploy.sh)를
 > 참고하세요.
 
 ---
