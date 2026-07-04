@@ -71,11 +71,13 @@ petRouter.get(
       return;
     }
     const img = await query(`SELECT 1 FROM pet_images WHERE pet_id = $1`, [pet.id]);
+    const persona = await query(`SELECT 1 FROM personas WHERE pet_id = $1`, [pet.id]);
     res.json({
       id: pet.id,
       name: pet.name,
       species: pet.species,
       hasImage: (img.rowCount ?? 0) > 0,
+      hasPersona: (persona.rowCount ?? 0) > 0,
     });
   })
 );
@@ -255,6 +257,72 @@ petRouter.get(
       return;
     }
     res.type("model/gltf-binary").sendFile(abs);
+  })
+);
+
+// ── 페르소나 ──
+
+const personaSchema = z.object({
+  traits: z.string().trim().min(1, "성격을 입력해주세요").max(500, "성격은 500자 이하"),
+  memories: z
+    .string()
+    .trim()
+    .min(1, "함께한 추억을 입력해주세요")
+    .max(2000, "추억은 2000자 이하"),
+  speaking: z.string().trim().max(200, "말투는 200자 이하").optional().default(""),
+});
+
+interface PersonaRow {
+  traits: string;
+  memories: string;
+  speaking: string;
+}
+
+// 페르소나 조회
+petRouter.get(
+  "/persona",
+  ah(async (req, res) => {
+    const pet = await getPetByUser(req.userId!);
+    if (!pet) {
+      res.status(404).json({ error: "등록된 반려동물이 없습니다" });
+      return;
+    }
+    const r = await query<PersonaRow>(
+      `SELECT traits, memories, speaking FROM personas WHERE pet_id = $1`,
+      [pet.id]
+    );
+    if (!r.rows[0]) {
+      res.status(404).json({ error: "작성된 페르소나가 없습니다" });
+      return;
+    }
+    res.json(r.rows[0]);
+  })
+);
+
+// 페르소나 저장(upsert)
+petRouter.put(
+  "/persona",
+  ah(async (req, res) => {
+    const pet = await getPetByUser(req.userId!);
+    if (!pet) {
+      res.status(404).json({ error: "먼저 반려동물을 등록해주세요" });
+      return;
+    }
+    const parsed = personaSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: parsed.error.issues[0]?.message ?? "잘못된 입력" });
+      return;
+    }
+    const { traits, memories, speaking } = parsed.data;
+    await query(
+      `INSERT INTO personas (pet_id, traits, memories, speaking)
+       VALUES ($1, $2, $3, $4)
+       ON CONFLICT (pet_id) DO UPDATE
+         SET traits=EXCLUDED.traits, memories=EXCLUDED.memories,
+             speaking=EXCLUDED.speaking, updated_at=now()`,
+      [pet.id, traits, memories, speaking]
+    );
+    res.json({ traits, memories, speaking });
   })
 );
 
