@@ -1,0 +1,15 @@
+# 홈서버 프로덕션 오버라이드 — docs/deploy-homeserver.md 참조
+# 사용:
+#   docker compose -p comebackhome -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+# web 은 호스트 nginx(터널 경유)만 접근하도록 127.0.0.1:4007 로만 노출한다(외부 직접 노출 금지).
+services:
+  web:
+    ports:
+      - "127.0.0.1:4007:80"
+    restart: unless-stopped
+
+  api:
+    restart: unless-stopped
+
+  db:
+    restart: unless-stopped

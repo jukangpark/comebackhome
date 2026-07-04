@@ -42,8 +42,9 @@ services:
       context: .
       dockerfile: apps/web/Dockerfile
     restart: unless-stopped
-    ports:
-      - "5173:80"
+    # 호스트 노출 포트는 환경별 오버라이드에서 지정한다:
+    #   로컬 개발  → docker-compose.override.yml (자동 로드, 5173:80)
+    #   홈서버 배포 → docker-compose.prod.yml     (127.0.0.1:4007:80)
     depends_on:
       - api
 

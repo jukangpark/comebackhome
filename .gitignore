@@ -19,7 +19,13 @@ uploads/
 models/
 *.glb
 
+# 로컬 개발용 compose 오버라이드 (서버로 전송 금지)
+docker-compose.override.yml
+
 # OS / editor
 .DS_Store
 .vscode/
 .idea/
+deploy-homeserver.md
+examples
+페르소나.txt
