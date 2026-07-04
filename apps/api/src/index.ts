@@ -2,7 +2,9 @@ import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import { migrate } from "./db.js";
+import { ensureMediaDirs } from "./lib/media.js";
 import { authRouter } from "./routes/auth.js";
+import { petRouter } from "./routes/pet.js";
 
 const app = express();
 const PORT = Number(process.env.API_PORT ?? 4000);
@@ -17,6 +19,7 @@ app.get("/api/health", (_req, res) => {
 });
 
 app.use("/api/auth", authRouter);
+app.use("/api/pet", petRouter);
 
 // 공통 에러 핸들러 (async 라우트에서 throw 시 500)
 app.use(
@@ -32,6 +35,7 @@ app.use(
 );
 
 async function start() {
+  await ensureMediaDirs();
   await migrate();
   app.listen(PORT, () => {
     console.log(`[api] listening on http://localhost:${PORT}`);
