@@ -3,6 +3,7 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 import { migrate } from "./db.js";
 import { ensureMediaDirs } from "./lib/media.js";
+import { startModelPoller } from "./workers/modelPoller.js";
 import { authRouter } from "./routes/auth.js";
 import { petRouter } from "./routes/pet.js";
 
@@ -37,6 +38,7 @@ app.use(
 async function start() {
   await ensureMediaDirs();
   await migrate();
+  startModelPoller();
   app.listen(PORT, () => {
     console.log(`[api] listening on http://localhost:${PORT}`);
   });

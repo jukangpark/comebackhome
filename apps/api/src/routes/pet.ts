@@ -1,12 +1,14 @@
 import { Router, type RequestHandler } from "express";
 import { join } from "node:path";
 import { existsSync } from "node:fs";
+import { readFile } from "node:fs/promises";
 import multer from "multer";
 import sharp from "sharp";
 import { z } from "zod";
 import { query } from "../db.js";
 import { requireAuth } from "../middleware/auth.js";
-import { UPLOADS_DIR } from "../lib/media.js";
+import { UPLOADS_DIR, MODELS_DIR } from "../lib/media.js";
+import { meshyProvider } from "../lib/meshy.js";
 
 export const petRouter = Router();
 petRouter.use(requireAuth);
@@ -146,6 +148,113 @@ petRouter.get(
       return;
     }
     res.sendFile(abs);
+  })
+);
+
+// ── 3D 모델 생성 ──
+
+interface ModelRow {
+  status: "IN_PROGRESS" | "DONE" | "FAILED";
+  progress: number;
+  glb_path: string | null;
+}
+
+// 생성 시작 (없거나 실패한 경우에만 새로 시작; DONE/진행중이면 현재 상태 반환)
+petRouter.post(
+  "/model",
+  ah(async (req, res) => {
+    const pet = await getPetByUser(req.userId!);
+    if (!pet) {
+      res.status(404).json({ error: "먼저 반려동물을 등록해주세요" });
+      return;
+    }
+    const imgRow = await query<{ file_path: string }>(
+      `SELECT file_path FROM pet_images WHERE pet_id = $1`,
+      [pet.id]
+    );
+    const filePath = imgRow.rows[0]?.file_path;
+    if (!filePath) {
+      res.status(400).json({ error: "먼저 사진을 업로드해주세요" });
+      return;
+    }
+
+    const existing = await query<ModelRow>(
+      `SELECT status, progress, glb_path FROM pet_models WHERE pet_id = $1`,
+      [pet.id]
+    );
+    const cur = existing.rows[0];
+    if (cur && cur.status !== "FAILED") {
+      // 이미 진행 중이거나 완료됨 → 재생성하지 않고 현재 상태 반환
+      res.json({ status: cur.status, progress: cur.progress });
+      return;
+    }
+
+    // 이미지 → base64 data URI
+    const abs = join(UPLOADS_DIR, filePath);
+    const b64 = (await readFile(abs)).toString("base64");
+    const dataUri = `data:image/jpeg;base64,${b64}`;
+
+    const taskId = await meshyProvider.createImageTo3d(dataUri);
+
+    await query(
+      `INSERT INTO pet_models (pet_id, meshy_task_id, status, progress, error)
+       VALUES ($1, $2, 'IN_PROGRESS', 0, NULL)
+       ON CONFLICT (pet_id) DO UPDATE
+         SET meshy_task_id=EXCLUDED.meshy_task_id, status='IN_PROGRESS',
+             progress=0, glb_path=NULL, error=NULL, updated_at=now()`,
+      [pet.id, taskId]
+    );
+
+    res.status(201).json({ status: "IN_PROGRESS", progress: 0 });
+  })
+);
+
+// 생성 상태 조회
+petRouter.get(
+  "/model",
+  ah(async (req, res) => {
+    const pet = await getPetByUser(req.userId!);
+    if (!pet) {
+      res.status(404).json({ error: "등록된 반려동물이 없습니다" });
+      return;
+    }
+    const r = await query<ModelRow>(
+      `SELECT status, progress, glb_path FROM pet_models WHERE pet_id = $1`,
+      [pet.id]
+    );
+    const m = r.rows[0];
+    if (!m) {
+      res.status(404).json({ error: "생성된 모델이 없습니다" });
+      return;
+    }
+    res.json({ status: m.status, progress: m.progress, hasGlb: !!m.glb_path });
+  })
+);
+
+// glb 서빙 (본인 펫만)
+petRouter.get(
+  "/model/file",
+  ah(async (req, res) => {
+    const pet = await getPetByUser(req.userId!);
+    if (!pet) {
+      res.status(404).end();
+      return;
+    }
+    const r = await query<{ glb_path: string | null }>(
+      `SELECT glb_path FROM pet_models WHERE pet_id = $1`,
+      [pet.id]
+    );
+    const gp = r.rows[0]?.glb_path;
+    if (!gp) {
+      res.status(404).end();
+      return;
+    }
+    const abs = join(MODELS_DIR, gp);
+    if (!existsSync(abs)) {
+      res.status(404).end();
+      return;
+    }
+    res.type("model/gltf-binary").sendFile(abs);
   })
 );
 

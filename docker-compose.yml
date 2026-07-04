@@ -24,6 +24,7 @@ services:
       DATABASE_URL: ${DATABASE_URL:-postgres://combackhome:change_me@db:5432/combackhome}
       JWT_SECRET: ${JWT_SECRET:-dev_secret}
       MESHY_API_KEY: ${MESHY_API_KEY:-}
+      MESHY_KEY: ${MESHY_KEY:-}
       CLAUDE_CODE_OAUTH_TOKEN: ${CLAUDE_CODE_OAUTH_TOKEN:-}
     volumes:
       - media:/app/apps/api/media
