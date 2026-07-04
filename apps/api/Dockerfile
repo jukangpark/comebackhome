@@ -5,9 +5,8 @@ ENV PNPM_HOME=/pnpm
 ENV PATH=$PNPM_HOME:$PATH
 RUN corepack enable
 
-# TODO(P5): 채팅용 Claude Code CLI 설치 예정
-#   RUN npm i -g @anthropic-ai/claude-code
-#   인증: CLAUDE_CODE_OAUTH_TOKEN 환경변수 주입
+# 채팅용 Claude Code CLI (헤드리스). 인증은 런타임에 CLAUDE_CODE_OAUTH_TOKEN 주입.
+RUN npm i -g @anthropic-ai/claude-code && claude --version
 
 WORKDIR /app
 

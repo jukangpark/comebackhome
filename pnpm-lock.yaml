@@ -77,6 +77,9 @@ importers:
       '@react-three/fiber':
         specifier: ^9.6.1
         version: 9.6.1(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(three@0.185.1)
+      '@shadcn/react':
+        specifier: ^0.2.0
+        version: 0.2.0(@types/react@19.2.17)(react@19.2.7)
       class-variance-authority:
         specifier: ^0.7.1
         version: 0.7.1
@@ -1581,6 +1584,17 @@ packages:
     resolution: {integrity: sha512-BfzEnDJOt9T8M989/lA37EcJgat01wLRnoi5dQf3QzOH7jzpqTAzdDbVfRljVr5r+jzKqpbHeyOfAaXxAd0PAA==}
     cpu: [x64]
     os: [win32]
+
+  '@shadcn/react@0.2.0':
+    resolution: {integrity: sha512-g/LMtyL0eiHCHkOCelhYf32RC5nTMdtUNag1ZQRhSDCW+jnHxDY1Dajk7P6zJosOg8z2N4wzfKOY5sh54QTDYA==}
+    peerDependencies:
+      '@types/react': '>=19'
+      react: '>=19'
+    peerDependenciesMeta:
+      '@types/react':
+        optional: true
+      react:
+        optional: true
 
   '@tailwindcss/node@4.3.2':
     resolution: {integrity: sha512-yWP/sqEcBLaD8JuA6zNwxoYKr75qxTioYwlRwekj5Jr/I5GXnoJfjetH/psLUIv74cYTH2lBUEzBkinthoYcBg==}
@@ -4134,6 +4148,11 @@ snapshots:
 
   '@rollup/rollup-win32-x64-msvc@4.62.2':
     optional: true
+
+  '@shadcn/react@0.2.0(@types/react@19.2.17)(react@19.2.7)':
+    optionalDependencies:
+      '@types/react': 19.2.17
+      react: 19.2.7
 
   '@tailwindcss/node@4.3.2':
     dependencies:

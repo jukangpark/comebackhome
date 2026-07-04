@@ -9,6 +9,7 @@ import { query } from "../db.js";
 import { requireAuth } from "../middleware/auth.js";
 import { UPLOADS_DIR, MODELS_DIR } from "../lib/media.js";
 import { meshyProvider } from "../lib/meshy.js";
+import { claudeProvider } from "../lib/claude.js";
 
 export const petRouter = Router();
 petRouter.use(requireAuth);
@@ -323,6 +324,106 @@ petRouter.put(
       [pet.id, traits, memories, speaking]
     );
     res.json({ traits, memories, speaking });
+  })
+);
+
+// ── 채팅 ──
+
+const HISTORY_LIMIT = 12; // 프롬프트에 넣을 최근 턴 수
+const FALLBACK_REPLY = "지금 잠깐 낮잠 자나봐요… 조금 있다 다시 불러줄래요? 💤";
+
+interface MsgRow {
+  id: string;
+  role: "user" | "pet";
+  content: string;
+  created_at: string;
+}
+
+const messageSchema = z.object({
+  message: z.string().trim().min(1, "메시지를 입력해주세요").max(1000, "메시지는 1000자 이하"),
+});
+
+// 대화 이력
+petRouter.get(
+  "/messages",
+  ah(async (req, res) => {
+    const pet = await getPetByUser(req.userId!);
+    if (!pet) {
+      res.status(404).json({ error: "등록된 반려동물이 없습니다" });
+      return;
+    }
+    const r = await query<MsgRow>(
+      `SELECT id, role, content, created_at FROM chat_messages
+        WHERE pet_id = $1 ORDER BY created_at ASC LIMIT 200`,
+      [pet.id]
+    );
+    res.json(r.rows);
+  })
+);
+
+// 메시지 전송 → 펫 답변
+petRouter.post(
+  "/messages",
+  ah(async (req, res) => {
+    const pet = await getPetByUser(req.userId!);
+    if (!pet) {
+      res.status(404).json({ error: "등록된 반려동물이 없습니다" });
+      return;
+    }
+    const parsed = messageSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: parsed.error.issues[0]?.message ?? "잘못된 입력" });
+      return;
+    }
+    const persona = await query<PersonaRow>(
+      `SELECT traits, memories, speaking FROM personas WHERE pet_id = $1`,
+      [pet.id]
+    );
+    if (!persona.rows[0]) {
+      res.status(400).json({ error: "먼저 페르소나를 작성해주세요" });
+      return;
+    }
+
+    const { message } = parsed.data;
+
+    // 프롬프트용 최근 이력(오래된→최신)
+    const hist = await query<MsgRow>(
+      `SELECT role, content FROM (
+         SELECT role, content, created_at FROM chat_messages
+          WHERE pet_id = $1 ORDER BY created_at DESC LIMIT $2
+       ) t ORDER BY created_at ASC`,
+      [pet.id, HISTORY_LIMIT]
+    );
+
+    // 사용자 메시지 저장
+    const userIns = await query<MsgRow>(
+      `INSERT INTO chat_messages (pet_id, role, content) VALUES ($1, 'user', $2)
+       RETURNING id, role, content, created_at`,
+      [pet.id, message]
+    );
+
+    // 답변 생성 (실패 시 폴백)
+    let reply: string;
+    try {
+      reply = await claudeProvider.reply({
+        petName: pet.name,
+        species: pet.species,
+        persona: persona.rows[0],
+        history: hist.rows.map((m) => ({ role: m.role, content: m.content })),
+        message,
+      });
+    } catch (err) {
+      console.error("[chat] reply failed:", err);
+      reply = FALLBACK_REPLY;
+    }
+
+    const petIns = await query<MsgRow>(
+      `INSERT INTO chat_messages (pet_id, role, content) VALUES ($1, 'pet', $2)
+       RETURNING id, role, content, created_at`,
+      [pet.id, reply]
+    );
+
+    res.json({ userMessage: userIns.rows[0], petMessage: petIns.rows[0] });
   })
 );
 
