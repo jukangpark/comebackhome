@@ -57,3 +57,20 @@ export const modelApi = {
 };
 
 export const petGlbUrl = () => `/api/pet/model/file`;
+
+// ── 채팅 ──
+export interface ChatMessage {
+  id: string;
+  role: "user" | "pet";
+  content: string;
+  created_at: string;
+}
+
+export const chatApi = {
+  history: () => api.get<ChatMessage[]>("/pet/messages"),
+  send: (message: string) =>
+    api.post<{ userMessage: ChatMessage; petMessage: ChatMessage }>(
+      "/pet/messages",
+      { message }
+    ),
+};

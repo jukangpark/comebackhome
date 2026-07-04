@@ -82,8 +82,8 @@ export default function Home() {
       </div>
 
       <div className="flex flex-col gap-2">
-        <Button className="w-full" disabled title="다음 단계에서 열려요">
-          💬 {pet.name}와 대화하기 (준비 중)
+        <Button className="w-full" onClick={() => navigate("/chat")}>
+          💬 {pet.name}와 대화하기
         </Button>
         <Button
           variant="outline"
