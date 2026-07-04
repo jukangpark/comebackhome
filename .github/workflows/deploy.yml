@@ -1,0 +1,82 @@
+name: deploy
+
+# master에 push되면 홈서버(self-hosted 러너)가 코드를 ~/comebackhome로 동기화하고
+# docker compose로 재빌드/재기동한다. 시크릿(.env)과 데이터 볼륨은 서버에만 두고 보존한다.
+# 러너: homeserver-comebackhome (repo-scoped, label: comebackhome)
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-comebackhome
+  cancel-in-progress: false
+
+env:
+  DEPLOY_DIR: /home/jukang/comebackhome
+  PROJECT: comebackhome
+  PORT: "4007"
+
+jobs:
+  deploy:
+    runs-on: [self-hosted, comebackhome]
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      # 코드만 서버 배포 디렉터리로 동기화한다.
+      # .env(시크릿) / media·pgdata(도커 볼륨) / node_modules 등은 제외 → 서버 상태 보존.
+      - name: Sync repo into deploy directory
+        run: |
+          set -euo pipefail
+          rsync -a --delete \
+            --exclude='.git' \
+            --exclude='.env' \
+            --exclude='ssh.env' \
+            --exclude='node_modules' \
+            --exclude='dist' \
+            --exclude='media' \
+            --exclude='docker-compose.override.yml' \
+            --exclude='*.log' \
+            ./ "$DEPLOY_DIR/"
+
+      - name: Verify secrets present on server
+        working-directory: ${{ env.DEPLOY_DIR }}
+        run: |
+          test -f .env || { echo "::error::서버에 ~/comebackhome/.env 가 없습니다. 최초 1회 수동 배치 필요."; exit 1; }
+
+      - name: Build & up (prod compose override)
+        id: deploy
+        working-directory: ${{ env.DEPLOY_DIR }}
+        run: |
+          set -euo pipefail
+          BUILD_START=$(date +%s)
+          docker compose -p "$PROJECT" -f docker-compose.yml -f docker-compose.prod.yml build
+          docker compose -p "$PROJECT" -f docker-compose.yml -f docker-compose.prod.yml up -d
+          BUILD_END=$(date +%s)
+          echo "build_duration=$((BUILD_END - BUILD_START))" >> "$GITHUB_OUTPUT"
+
+      # api 부팅 시 DB 마이그레이션이 자동 적용되므로, 웹이 200 뜰 때까지 잠깐 대기하며 헬스체크.
+      - name: Health check (:4007)
+        run: |
+          set -euo pipefail
+          for i in $(seq 1 30); do
+            code="$(curl -fsS -o /dev/null -w '%{http_code}' "http://127.0.0.1:${PORT}/" || true)"
+            if [ "$code" = "200" ]; then echo "web OK ($code)"; exit 0; fi
+            echo "attempt $i: HTTP $code — 대기..."; sleep 2
+          done
+          echo "::error::web 헬스체크 실패(:${PORT})"
+          docker compose -p "$PROJECT" logs --tail=80 web api || true
+          exit 1
+
+      - name: Container status
+        if: always()
+        run: docker compose -p "$PROJECT" ps --format "table {{.Name}}\t{{.Status}}\t{{.Ports}}" | head -20
+
+      - name: Prune dangling images
+        if: success()
+        run: docker image prune -f
