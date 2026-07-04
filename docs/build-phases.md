@@ -14,7 +14,7 @@
 | P0 | 뼈대 & Docker Compose | ✅ 완료 |
 | P1 | 인증(회원가입/로그인) | ✅ 완료 |
 | P2 | 펫 등록 & 이미지 업로드 | ✅ 완료 |
-| P3 | 3D 생성(Meshy) & 뷰어 | ⬜ 대기 |
+| P3 | 3D 생성(Meshy) & 뷰어 | ✅ 완료 |
 | P4 | 페르소나 | ⬜ 대기 |
 | P5 | 채팅(claude -p) | ⬜ 대기 |
 | P6 | 마감 & 홈서버 배포 | ⬜ 대기 |
@@ -147,10 +147,13 @@
 - 실제 강아지/고양이 사진 → glb 생성 → 뷰어에서 회전 확인(로컬, 실제 Meshy 키 필요)
 - 생성 실패 시 상태·에러 표시
 
-### ❓ 물어볼 것
-- **Meshy API 키 필요** (이 시점에 주입) — `.env`에 `MESHY_API_KEY`
-- 생성 파라미터 확정: meshy-6 / triangle / 30k / glb / pbr off (설계 기본값 그대로 OK?)
-- 폴링 실패/타임아웃 상한(예: 5분 초과 시 FAILED)?
+### 결정됨 / 메모
+- **pg-boss 대신 DB 기반 인터벌 폴러**(6초). IN_PROGRESS 행을 매 틱 DB에서 재조회 → 재시작 안전. 타임아웃 10분.
+- 키: 코드가 `MESHY_API_KEY || MESHY_KEY` 순으로 읽음(빈 문자열은 미설정 취급). `.env`엔 실제 `MESHY_KEY` 존재.
+- 파라미터: meshy-6 / triangle / 30k / glb / pbr off (설계 기본값).
+- **검증**: 테스트 더미 키(`msy_dummy_api_key_for_test_mode_12345678`)로 전 구간 확인 — 더미 키는 실제 샘플 glb를 즉시 SUCCEEDED 반환. start→폴링→glb 다운로드(2.2MB)→DONE→서빙(model/gltf-binary) 통과.
+- ⏳ **실제 키로 첫 생성은 사용자가 직접** (크레딧 30 소모). 앱에서 온보딩 완주 시 실제 3D 생성됨.
+- 후속 최적화(선택): three/R3F lazy-load로 초기 번들 축소(현재 1.3MB).
 
 ---
 
