@@ -1,0 +1,25 @@
+# Secrets / env — 절대 커밋 금지
+.env
+.env.*
+!.env.example
+ssh.env
+*.pem
+*.key
+
+# Node
+node_modules/
+dist/
+build/
+.pnpm-store/
+*.log
+
+# Media (업로드/생성물)
+media/
+uploads/
+models/
+*.glb
+
+# OS / editor
+.DS_Store
+.vscode/
+.idea/
