@@ -3,6 +3,7 @@ import { AuthProvider } from "@/auth/AuthContext";
 import { ProtectedRoute } from "@/routes/ProtectedRoute";
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
+import Onboarding from "@/pages/Onboarding";
 import Home from "@/pages/Home";
 
 export default function App() {
@@ -15,6 +16,7 @@ export default function App() {
 
           <Route element={<ProtectedRoute />}>
             <Route path="/" element={<Home />} />
+            <Route path="/onboarding" element={<Onboarding />} />
           </Route>
 
           <Route path="*" element={<Navigate to="/" replace />} />
