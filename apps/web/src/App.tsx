@@ -5,6 +5,7 @@ import Login from "@/pages/Login";
 import Register from "@/pages/Register";
 import Onboarding from "@/pages/Onboarding";
 import Home from "@/pages/Home";
+import PersonaPage from "@/pages/Persona";
 
 export default function App() {
   return (
@@ -17,6 +18,7 @@ export default function App() {
           <Route element={<ProtectedRoute />}>
             <Route path="/" element={<Home />} />
             <Route path="/onboarding" element={<Onboarding />} />
+            <Route path="/persona" element={<PersonaPage />} />
           </Route>
 
           <Route path="*" element={<Navigate to="/" replace />} />

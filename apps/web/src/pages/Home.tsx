@@ -31,6 +31,11 @@ export default function Home() {
           navigate("/onboarding", { replace: true });
           return;
         }
+        // 페르소나 미작성이면 온보딩(페르소나 단계)로
+        if (!p.hasPersona) {
+          navigate("/onboarding", { replace: true });
+          return;
+        }
         setPet(p);
       } catch (err) {
         if (err instanceof ApiError && err.status === 404) {
@@ -74,9 +79,19 @@ export default function Home() {
         <h1 className="text-2xl font-bold">
           {pet.species === "dog" ? "🐶" : "🐱"} {pet.name}
         </h1>
-        <p className="text-muted-foreground mt-1 text-sm">
-          다음 단계에서 페르소나를 작성하고 대화를 시작해요
-        </p>
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <Button className="w-full" disabled title="다음 단계에서 열려요">
+          💬 {pet.name}와 대화하기 (준비 중)
+        </Button>
+        <Button
+          variant="outline"
+          className="w-full"
+          onClick={() => navigate("/persona")}
+        >
+          페르소나 수정
+        </Button>
       </div>
     </div>
   );

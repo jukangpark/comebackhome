@@ -7,12 +7,21 @@ export interface Pet {
   name: string;
   species: Species;
   hasImage: boolean;
+  hasPersona: boolean;
+}
+
+export interface Persona {
+  traits: string;
+  memories: string;
+  speaking: string;
 }
 
 export const petApi = {
   get: () => api.get<Pet>("/pet"),
   create: (name: string, species: Species) =>
     api.post<Pet>("/pet", { name, species }),
+  getPersona: () => api.get<Persona>("/pet/persona"),
+  savePersona: (p: Persona) => api.put<Persona>("/pet/persona", p),
 
   // 이미지 업로드는 multipart 라 fetch 직접 사용
   uploadImage: async (file: File): Promise<void> => {

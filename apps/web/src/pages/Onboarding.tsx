@@ -7,8 +7,9 @@ import { cn } from "@/lib/utils";
 import { ApiError } from "@/lib/api";
 import { petApi, modelApi, type Species } from "@/lib/pet";
 import { GenerateStep } from "@/components/GenerateStep";
+import { PersonaForm } from "@/components/PersonaForm";
 
-type Step = "loading" | "info" | "image" | "generate";
+type Step = "loading" | "info" | "image" | "generate" | "persona";
 
 export default function Onboarding() {
   const navigate = useNavigate();
@@ -18,6 +19,7 @@ export default function Onboarding() {
 
   // 폼 상태
   const [name, setName] = useState("");
+  const [petName, setPetName] = useState(""); // 페르소나 단계용
   const [species, setSpecies] = useState<Species | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [file, setFile] = useState<File | null>(null);
@@ -27,6 +29,7 @@ export default function Onboarding() {
     (async () => {
       try {
         const pet = await petApi.get();
+        setPetName(pet.name);
         if (!pet.hasImage) {
           setStep("image");
           return;
@@ -34,12 +37,21 @@ export default function Onboarding() {
         // 이미지까지 있음 → 모델 상태로 분기
         try {
           const m = await modelApi.status();
-          if (m.status === "DONE") navigate("/", { replace: true });
-          else setStep("generate"); // IN_PROGRESS or FAILED → 이어서/재시도
+          if (m.status !== "DONE") {
+            setStep("generate"); // IN_PROGRESS or FAILED → 이어서/재시도
+            return;
+          }
         } catch (err) {
-          if (err instanceof ApiError && err.status === 404) setStep("generate");
-          else setError("불러오는 중 문제가 발생했어요");
+          if (err instanceof ApiError && err.status === 404) {
+            setStep("generate");
+            return;
+          }
+          setError("불러오는 중 문제가 발생했어요");
+          return;
         }
+        // 모델 완료 → 페르소나 유무로 분기
+        if (pet.hasPersona) navigate("/", { replace: true });
+        else setStep("persona");
       } catch (err) {
         if (err instanceof ApiError && err.status === 404) setStep("info");
         else setError("불러오는 중 문제가 발생했어요");
@@ -53,6 +65,7 @@ export default function Onboarding() {
     setBusy(true);
     try {
       await petApi.create(name.trim(), species);
+      setPetName(name.trim());
       setStep("image");
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "등록에 실패했어요");
@@ -95,18 +108,32 @@ export default function Onboarding() {
       {step !== "generate" && (
         <div className="text-center">
           <h1 className="text-2xl font-bold">
-            {step === "info" ? "우리 아이를 소개해주세요" : "사진 한 장 올려주세요"}
+            {step === "info"
+              ? "우리 아이를 소개해주세요"
+              : step === "image"
+                ? "사진 한 장 올려주세요"
+                : `${petName ? petName + "는" : "우리 아이는"} 어떤 아이였나요?`}
           </h1>
           <p className="text-muted-foreground mt-1 text-sm">
             {step === "info"
               ? "이름과 종류를 알려주세요"
-              : "얼굴이 잘 보이는 정면 사진이 좋아요"}
+              : step === "image"
+                ? "얼굴이 잘 보이는 정면 사진이 좋아요"
+                : "성격과 추억을 적으면 그 아이처럼 대화해요"}
           </p>
         </div>
       )}
 
       {step === "generate" && (
-        <GenerateStep onDone={() => navigate("/", { replace: true })} />
+        <GenerateStep onDone={() => setStep("persona")} />
+      )}
+
+      {step === "persona" && (
+        <PersonaForm
+          petName={petName || "우리 아이"}
+          submitLabel="완료하고 만나러 가기"
+          onSaved={() => navigate("/", { replace: true })}
+        />
       )}
 
       {step === "info" && (
