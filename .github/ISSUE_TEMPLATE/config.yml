@@ -1,0 +1,2 @@
+# 템플릿 없는 자유 형식 이슈(빈 이슈) 생성을 막습니다.
+blank_issues_enabled: false
