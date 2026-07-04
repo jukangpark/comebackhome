@@ -1,0 +1,15 @@
+**/node_modules
+**/dist
+**/build
+media
+uploads
+models
+*.glb
+.git
+.env
+.env.*
+!.env.example
+ssh.env
+docs
+*.md
+.DS_Store
