@@ -16,7 +16,7 @@
 | P2 | 펫 등록 & 이미지 업로드 | ✅ 완료 |
 | P3 | 3D 생성(Meshy) & 뷰어 | ✅ 완료 |
 | P4 | 페르소나 | ✅ 완료 |
-| P5 | 채팅(claude -p) | ⬜ 대기 |
+| P5 | 채팅(claude -p) | ✅ 완료 (실컨테이너 답변은 토큰 주입 후) |
 | P6 | 마감 & 홈서버 배포 | ⬜ 대기 |
 
 상태 표기: ⬜ 대기 / 🟡 진행 / ✅ 완료
@@ -209,10 +209,12 @@
 - 로컬에서 페르소나 반영된 답변 수신(Docker 안 claude 인증 포함)
 - 대화 이력 유지·표시
 
-### ❓ 물어볼 것
-- **`claude setup-token`으로 OAuth 토큰 발급 필요** (이 시점)
-- 답변 톤/길이 가이드(짧고 귀엽게 등) 세부 지침?
-- 컨텍스트 길이 12턴 확정?
+### 결정됨 / 메모
+- **토큰 방식 확정**: 컨테이너 이미지에 claude CLI(npm, v2.1.201) 설치, 런타임에 `CLAUDE_CODE_OAUTH_TOKEN` 주입. 로컬/프로덕션 동일.
+- 홈서버 점검 결과: claude 네이티브 바이너리(`~/.local/share/claude`), **Max 구독(5x)** OAuth 로그인됨, `claude -p --model claude-opus-4-8 --output-format json` 정상. node 미설치(claude는 네이티브라 무관).
+- 프롬프트: 페르소나=append-system-prompt, 최근 **12턴**+새 메시지=prompt. 답변 1~3문장. 동시성 세마포어 3, 40s 타임아웃, 실패 시 폴백 문구.
+- **검증**: (1) 맥에서 ChatProvider 단독 실행 → 페르소나 반영된 실제 답변 확인. (2) 컨테이너 플러밍(유저저장→실패시 폴백→저장) E2E 확인.
+- ⏳ **남은 것**: `claude setup-token`으로 토큰 발급 → `.env`의 `CLAUDE_CODE_OAUTH_TOKEN` → 컨테이너에서도 실제 답변. (로컬/홈서버 공통)
 
 ---
 
