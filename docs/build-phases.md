@@ -11,7 +11,7 @@
 
 | Phase | 이름 | 상태 |
 |---|---|---|
-| P0 | 뼈대 & Docker Compose | ⬜ 대기 |
+| P0 | 뼈대 & Docker Compose | ✅ 완료 |
 | P1 | 인증(회원가입/로그인) | ⬜ 대기 |
 | P2 | 펫 등록 & 이미지 업로드 | ⬜ 대기 |
 | P3 | 3D 생성(Meshy) & 뷰어 | ⬜ 대기 |
@@ -49,13 +49,17 @@
 4. `feat(web): tailwind + shadcn/ui setup`
 5. `chore(docker): compose with web, api, postgres`
 
-### 완료 기준
-- `docker compose up` → 3 컨테이너 healthy
-- 브라우저 `localhost:5173`에서 web 로드(shadcn button 렌더), `localhost:4000/api/health` 200
+### 완료 기준 ✅
+- [x] `docker compose up` → db/api/web 3 컨테이너 healthy
+- [x] `localhost:5173` web 로드(shadcn Button 렌더), `localhost:5173/api/health` → nginx 프록시로 api 200
 
-### ❓ 물어볼 것
-- (해결됨) pnpm / web:5173·api:4000 / shadcn — 확정
-- shadcn base color 테마(neutral/zinc/slate 등)? 기본 `zinc` 제안
+### 메모 (구현 중 배운 것)
+- 색상은 `apps/web/src/styles/theme.css` 로 분리(요청사항). 매핑은 `index.css` @theme inline.
+- **pnpm 버전 고정**: 루트 `package.json`의 `packageManager: pnpm@9.15.9`. 컨테이너 corepack이 최신 pnpm을 받아 `minimumReleaseAge` 공급망 정책에 걸리던 문제 → 로컬과 버전 일치로 해결(재현성 ↑).
+- Tailwind v4 + shadcn(new-york). button은 CLI 대신 수동 배치(theme 분리 보호).
+
+### ❓ 해결됨
+- pnpm / web:5173·api:4000 / Vite / shadcn — 확정. base color는 theme.css 변수로 분리(사용자가 직접 조정).
 
 ---
 
